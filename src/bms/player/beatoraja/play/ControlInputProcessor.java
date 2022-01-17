@@ -47,6 +47,7 @@ public class ControlInputProcessor {
 
 	private boolean hispeedAutoAdjust;
 
+	private boolean judgeTimingAutoAdjustPressed;
 	/** 判定調節キーを押しっぱなしにした時、連射状態になるまでの時間 (ミリ秒) */
 	private static final long JUDGETIMING_AUTOFIRE_DELAY_MILLIS = 500;
 	/** 判定調節キーを押しっぱなしにした時の連射間隔時間 (ミリ秒) */
@@ -191,6 +192,18 @@ public class ControlInputProcessor {
 				player.setPlaySpeed(100);
 			}
 		} else {
+			if (input.getControlKeyState(ControlKeys.NUMPAD0)) {
+				// 判定自動調節オンオフ
+				// 現在の judgetiming を取得
+				if (!judgeTimingAutoAdjustPressed) {
+					final PlayerConfig config = player.main.getPlayerConfig();
+					config.setNotesDisplayTimingAutoAdjust(!config.isNotesDisplayTimingAutoAdjust());
+					System.out.println("NUMPAD0 Pressed");
+					judgeTimingAutoAdjustPressed = true;
+				}
+			} else {
+				judgeTimingAutoAdjustPressed = false;
+			}
 			if (input.getControlKeyState(ControlKeys.NUMPAD9)) {
 				// 判定位置を上げる
 				adjustJudgeTiming(true, now);
