@@ -2,12 +2,13 @@ package bms.player.beatoraja.input;
 
 import java.util.Arrays;
 
-import bms.player.beatoraja.PlayModeConfig.KeyboardConfig;
-import bms.player.beatoraja.Resolution;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.utils.IntArray;
-import com.badlogic.gdx.Input.Keys;
+
+import bms.player.beatoraja.PlayModeConfig.KeyboardConfig;
+import bms.player.beatoraja.Resolution;
 
 /**
  * キーボード入力処理用クラス
@@ -238,6 +239,9 @@ public class KeyBoardInputProcesseor extends BMSPlayerInputDevice implements Inp
 		ENTER(26, Keys.ENTER, false),
 		DEL(27, Keys.FORWARD_DEL, false),
 		ESCAPE(28, Keys.ESCAPE, false),
+
+		NUMPAD3(103, Keys.NUMPAD_3, true),
+		NUMPAD9(109, Keys.NUMPAD_9, true),
 		;
 		
 		public final int id;

@@ -4,8 +4,9 @@ import static bms.player.beatoraja.skin.SkinProperty.*;
 
 import java.util.Arrays;
 
-import bms.player.beatoraja.PlayConfig;
 import bms.player.beatoraja.BMSPlayerMode;
+import bms.player.beatoraja.PlayConfig;
+import bms.player.beatoraja.PlayerConfig;
 import bms.player.beatoraja.input.BMSPlayerInputProcessor;
 import bms.player.beatoraja.input.KeyBoardInputProcesseor.ControlKeys;
 
@@ -45,6 +46,15 @@ public class ControlInputProcessor {
 	private long coverSpeedSwitchDuration = 500;
 
 	private boolean hispeedAutoAdjust;
+
+	/** 判定調節キーを押しっぱなしにした時、連射状態になるまでの時間 (ミリ秒) */
+	private static final long JUDGETIMING_AUTOFIRE_DELAY_MILLIS = 500;
+	/** 判定調節キーを押しっぱなしにした時の連射間隔時間 (ミリ秒) */
+	private static final long JUDGETIMING_AUTOFIRE_INTERVAL_MILLIS = 100;
+	private boolean judgeTimingPlusPressed;
+	private boolean judgeTimingMinusPressed;
+	private long judgeTimingPlusPressedTime;
+	private long judgeTimingMinusPressedTime;
 
 	public ControlInputProcessor(BMSPlayer player, BMSPlayerMode autoplay) {
 		this.player = player;
@@ -179,6 +189,73 @@ public class ControlInputProcessor {
 				player.setPlaySpeed(300);
 			} else {
 				player.setPlaySpeed(100);
+			}
+		} else {
+			if (input.getControlKeyState(ControlKeys.NUMPAD9)) {
+				// 判定位置を上げる
+				adjustJudgeTiming(true, now);
+			} else {
+				judgeTimingPlusPressed = false;
+				judgeTimingPlusPressedTime = now;
+			}
+			if (input.getControlKeyState(ControlKeys.NUMPAD3)) {
+				// 判定位置を下げる
+				adjustJudgeTiming(false, now);
+			} else {
+				judgeTimingMinusPressed = false;
+				judgeTimingMinusPressedTime = now;
+			}
+		}
+	}
+	
+	/**
+	 * 判定タイミングを調節する。
+	 * @param plus プラス方向に調節する場合 true
+	 * @param now input メソッドで取得した現在時刻
+	 */
+	private void adjustJudgeTiming(boolean plus, long now) {
+		// judgetiming に足す値		
+		int addValue;
+		// 判定調節キーを押したかどうか
+		boolean judgeTimingPressed;
+		// 判定調節キーを押し始めた時刻 (ミリ秒)
+		long judgeTimingPressedTime;
+		if (plus) {
+			// 判定位置を上げる
+			addValue = 1;
+			judgeTimingPressed = judgeTimingPlusPressed;
+			judgeTimingPressedTime = judgeTimingPlusPressedTime;
+		} else {
+			// 判定位置を下げる
+			addValue = -1;
+			judgeTimingPressed = judgeTimingMinusPressed;
+			judgeTimingPressedTime = judgeTimingMinusPressedTime;
+		}
+		// 現在の judgetiming を取得
+		final PlayerConfig config = player.main.getPlayerConfig();
+		int judgeTiming = config.getJudgetiming();
+		// judgetiming が最大値の場合にプラス、あるいは最小値の場合にマイナスに調節しようとした場合処理をキャンセル
+		if ((plus && judgeTiming == PlayerConfig.JUDGETIMING_MAX)
+				|| !plus && judgeTiming == PlayerConfig.JUDGETIMING_MIN) {
+			return;
+		}
+		// 値の増減を実行するかどうか
+		// 判定調節キーを最初に押した時
+		boolean canProc = !judgeTimingPressed;
+		// 最初に押した時以外 (押しっぱなし) の場合、押しっぱなしにした時間を見る
+		if (!canProc) {
+			long elapsedTime = now - judgeTimingPressedTime;
+			// DELAY 秒以上の場合、 INTERVAL の間隔で実行させる
+			canProc = elapsedTime > JUDGETIMING_AUTOFIRE_DELAY_MILLIS
+					&& ((elapsedTime - JUDGETIMING_AUTOFIRE_DELAY_MILLIS) % JUDGETIMING_AUTOFIRE_INTERVAL_MILLIS) == 0;
+		}
+		if (canProc) {
+			config.setJudgetiming(config.getJudgetiming() + addValue);
+			// 実行したら、判定調節キーを押したことにする
+			if (plus) {
+				judgeTimingPlusPressed = true;
+			} else {
+				judgeTimingMinusPressed = true;
 			}
 		}
 	}
